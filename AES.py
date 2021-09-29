@@ -5,7 +5,7 @@ from misc import *
 class AES_key(object):
 
     def __init__(self, key=None):
-        self.key = key;
+        self.basekey = key;
         self.round_keys = [0 for _ in range(44)];
         if key:
             self.generate_round_keys();
@@ -20,15 +20,13 @@ class AES_key(object):
         return ret;
 
     def generate_round_keys(self):
-        rc = [0x01000000, 0x02000000, 0x04000000, 0x08000000 \
-        , 0x10000000, 0x20000000, 0x40000000, 0x80000000 \
-        , 0x1B000000, 0x36000000];
+        rc = [0x01000000, 0x02000000, 0x04000000, 0x08000000 , 0x10000000, 0x20000000, 0x40000000, 0x80000000 , 0x1B000000, 0x36000000];
         rotword = lambda x : ((x << 8) & 0xFFFFFF00) ^ (x >> 24);
         N = 4 ; # 4 mots de 32 bits pour une clef de 128-bit.
         R = 11 ; # Nb rounds pour une clef de 128 bits.
         for round in range(4*R):
             if round < N:
-                W = self.key[round];
+                W = self.basekey[round];
             elif (round >= N and (round%N)==0):
                 index = round//N-1;
                 W = self.round_keys[round-N] ^ AES_key._subword(rotword(W)) ^ rc[index] ;
@@ -52,7 +50,7 @@ class AES(object):
     def encrypt(self, source):
         state = list(source);
         # First Round,
-        state = misc.a_xor(state, self.key.key);
+        state = misc.a_xor(state, self.key.basekey);
         # Middle Rounds,
         k = 4;
         s0, s1, s2, s3 = state[0], state[1], state[2], state[3];
@@ -64,10 +62,10 @@ class AES(object):
             s0, s1, s2, s3 = t0, t1, t2, t3;
             k+=4;
         # Last Round.
-        s0 = (sb(t0 >> 24) << 24) ^ (sb(t1 >> 16) << 16) ^ (sb(t2 >> 8) << 8) ^ sb(t3);
-        s1 = (sb(t1 >> 24) << 24) ^ (sb(t2 >> 16) << 16) ^ (sb(t3 >> 8) << 8) ^ sb(t0);
-        s2 = (sb(t2 >> 24) << 24) ^ (sb(t3 >> 16) << 16) ^ (sb(t0 >> 8) << 8) ^ sb(t1);
-        s3 = (sb(t3 >> 24) << 24) ^ (sb(t0 >> 16) << 16) ^ (sb(t1 >> 8) << 8) ^ sb(t2);
+        s0 = (sb(t0 >> 24) << 24) | (sb(t1 >> 16) << 16) | (sb(t2 >> 8) << 8) | sb(t3);
+        s1 = (sb(t1 >> 24) << 24) | (sb(t2 >> 16) << 16) | (sb(t3 >> 8) << 8) | sb(t0);
+        s2 = (sb(t2 >> 24) << 24) | (sb(t3 >> 16) << 16) | (sb(t0 >> 8) << 8) | sb(t1);
+        s3 = (sb(t3 >> 24) << 24) | (sb(t0 >> 16) << 16) | (sb(t1 >> 8) << 8) | sb(t2);
 
         s0 ^= self.key.round_keys[k+0];
         s1 ^= self.key.round_keys[k+1];
@@ -90,9 +88,11 @@ if __name__ == "__main__":
     apply_tboxes(0, 0, 0, 0);
 
     key = block2array(0x2b7e151628aed2a6abf7158809cf4f3c);
-    msg = block2array(0x6bc1bee22e409f96e93d7e117393172a);
+    msg = block2array(0xae2d8a571e03ac9c9eb76fac45af8e51);
 
-    print(key, msg);
+    beautiful_hex = lambda X : ["0x"+hex(x)[2:].zfill(8) for x in X];
+
+    print(beautiful_hex(key), beautiful_hex(msg));
 
     my_AES = AES(key);
     print(my_AES.key.round_keys);
