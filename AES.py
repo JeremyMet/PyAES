@@ -84,16 +84,21 @@ def block2array(val):
     return ret;
 
 if __name__ == "__main__":
-    print(mult_0x02(0x01));
-    apply_tboxes(0, 0, 0, 0);
 
     key = block2array(0x2b7e151628aed2a6abf7158809cf4f3c);
     msg = block2array(0xae2d8a571e03ac9c9eb76fac45af8e51);
 
     beautiful_hex = lambda X : ["0x"+hex(x)[2:].zfill(8) for x in X];
-
-    print(beautiful_hex(key), beautiful_hex(msg));
+    print("key: {}, msg: {}".format(beautiful_hex(key), beautiful_hex(msg)));
 
     my_AES = AES(key);
-    print(my_AES.key.round_keys);
-    print([hex(i) for i in my_AES.encrypt(msg)]);
+    print("res: ", [hex(i) for i in my_AES.encrypt(msg)]);
+
+    import time;
+    _NB_TESTS = 1000000;
+    t0 = time.time();
+    for _ in range(_NB_TESTS):
+        msg = my_AES.encrypt(msg);
+    t1 = time.time();
+
+    print("Execution time for {} runs: {}s.".format(_NB_TESTS, t1-t0));
